@@ -32,13 +32,7 @@ const mockConversationSlice = createSlice({
   name: 'conversation',
   initialState: {
     ids: [29],
-    entities: {
-      29: {
-        id: 29,
-        status: 'open',
-        messages: ALL_MESSAGES_MOCKDATA,
-      },
-    },
+    entities: { 29: { id: 29, status: 'open', messages: ALL_MESSAGES_MOCKDATA } },
   },
   reducers: {},
 });
