@@ -2,7 +2,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   return {
-    name: 'Chatwoot',
+    name: 'Chatwoot Dulido',
     slug: process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile',
     version: '4.0.18',
     orientation: 'portrait',
@@ -17,7 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.chatwoot.app',
+      bundleIdentifier: 'com.daarululuumlido.chatwoot',
       infoPlist: {
         NSCameraUsageDescription:
           'This app requires access to the camera to upload images and videos.',
@@ -30,18 +30,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ITSAppUsesNonExemptEncryption: false,
       },
       // Please use the relative path to the google-services.json file
-      googleServicesFile: process.env.EXPO_PUBLIC_IOS_GOOGLE_SERVICES_FILE,
+      googleServicesFile: './GoogleService-Info.plist',
       entitlements: {
         'aps-environment': 'production',
       },
-      associatedDomains: ['applinks:app.chatwoot.com'],
+      associatedDomains: ['applinks:chatwoot.daarululuumlido.com'],
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.chatwoot.app',
+      package: 'com.daarululuumlido.chatwoot',
       permissions: [
         'android.permission.CAMERA',
         'android.permission.READ_EXTERNAL_STORAGE',
@@ -50,7 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'android.permission.READ_MEDIA_IMAGES',
       ],
       // Please use the relative path to the google-services.json file
-      googleServicesFile: process.env.EXPO_PUBLIC_ANDROID_GOOGLE_SERVICES_FILE,
+      googleServicesFile: './google-services.json',
       intentFilters: [
         {
           action: 'VIEW',
@@ -58,7 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           data: [
             {
               scheme: 'https',
-              host: 'app.chatwoot.com',
+              host: 'chatwoot.daarululuumlido.com',
               pathPrefix: '/app/accounts/',
               pathPattern: '/*/conversations/*',
             },
@@ -69,11 +69,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       eas: {
-        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+        projectId: "cdf619a0-5a45-448c-acf2-41213cc19781",
         storybookEnabled: process.env.EXPO_STORYBOOK_ENABLED,
       },
     },
-    owner: 'chatwoot',
+    owner: 'hasanbasri93',
     plugins: [
       'expo-font',
       [
@@ -86,8 +86,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         '@sentry/react-native/expo',
         {
           url: 'https://sentry.io/',
-          project: process.env.EXPO_PUBLIC_SENTRY_PROJECT_NAME,
-          organization: process.env.EXPO_PUBLIC_SENTRY_ORG_NAME,
+          project: 'chatwoot',
+          organization: 'hasan93',
         },
       ],
       '@react-native-firebase/app',
