@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "18522398128",
+    "project_id": "chatwoot-dulido",
+    "storage_bucket": "chatwoot-dulido.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18522398128:android:939e6087c1c6fba1920a75",
+        "android_client_info": {
+          "package_name": "com.daarululuumlido.chatwoot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqQNfUr27ps5WjuatQymum2CS6s4TC0kQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
