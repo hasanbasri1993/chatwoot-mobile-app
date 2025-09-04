@@ -100,21 +100,30 @@ export const AudioRecorder = ({
       const dirs = RNFetchBlob.fs.dirs;
       const path = Platform.select({
         ios: `audio-${localRecordedAudioCacheFilePaths.length}.m4a`,
-        android: `${dirs.CacheDir}/audio-${localRecordedAudioCacheFilePaths.length}.mp3`,
+        android: `${dirs.CacheDir}/audio-${localRecordedAudioCacheFilePaths.length}.aac`,
       });
 
       ARPlayer.startRecorder(path, {
         AVFormatIDKeyIOS: AVEncodingOption.aac,
         AVNumberOfChannelsKeyIOS: 2,
         AVSampleRateKeyIOS: 44100,
+        AudioSourceAndroid: 1, // MIC
+        OutputFormatAndroid: 6, // AAC_ADTS
+        AudioEncoderAndroid: 3, // AAC
+        AudioSamplingRateAndroid: 16000,
+        AudioEncodingBitRateAndroid: 128000,
+        AudioChannelsAndroid: 2,
       })
         .then((value: string) => {
           if (value) {
             setIsAudioRecording(true);
           }
         })
-        .catch(e => {
-          Alert.alert(e);
+        .catch(error => {
+          Alert.alert(
+            'Error preparing audio file',
+            error instanceof Error ? error.message : String(error),
+          );
           deleteRecorder();
         });
     };
@@ -144,9 +153,9 @@ export const AudioRecorder = ({
       return {
         uri: finalPath,
         originalPath: finalPath,
-        type: 'audio/mp3',
-        fileName: `audio-${localRecordedAudioCacheFilePaths.length}.mp3`,
-        name: `audio-${localRecordedAudioCacheFilePaths.length}.mp3`,
+        type: 'audio/aac',
+        fileName: `audio-${localRecordedAudioCacheFilePaths.length}.aac`,
+        name: `audio-${localRecordedAudioCacheFilePaths.length}.aac`,
         fileSize: stats.size,
       };
     }

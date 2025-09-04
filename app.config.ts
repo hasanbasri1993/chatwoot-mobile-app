@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     name: 'Chatwoot Dulido',
     slug: process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile',
-    version: '4.0.18',
+    version: '4.1.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -37,10 +37,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       associatedDomains: ['applinks:chatwoot.daarululuumlido.com'],
     },
     android: {
-      adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#ffffff',
-      },
       package: 'com.daarululuumlido.chatwoot',
       permissions: [
         'android.permission.CAMERA',
@@ -76,12 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     owner: 'hasanbasri93',
     plugins: [
       'expo-font',
-      [
-        'react-native-permissions',
-        {
-          iosPermissions: ['Camera', 'PhotoLibrary', 'MediaLibrary'],
-        },
-      ],
+      ['react-native-permissions', { iosPermissions: ['Camera', 'PhotoLibrary', 'MediaLibrary'] }],
       [
         '@sentry/react-native/expo',
         {
@@ -100,19 +91,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             minSdkVersion: 24,
             compileSdkVersion: 35,
             targetSdkVersion: 34,
-            extraMavenRepos: ['$rootDir/../../../node_modules/@notifee/react-native/android/libs'],
             enableProguardInReleaseBuilds: true,
-            exclude: ['ffmpeg-kit-react-native'],
           },
-          ios: {
-            useFrameworks: 'static',
-          },
+          ios: { useFrameworks: 'static' },
         },
       ],
       './with-ffmpeg-pod.js',
     ],
-    androidNavigationBar: {
-      backgroundColor: '#ffffff',
-    },
+    androidNavigationBar: { backgroundColor: '#ffffff' },
   };
 };
