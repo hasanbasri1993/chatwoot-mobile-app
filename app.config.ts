@@ -31,14 +31,21 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ITSAppUsesNonExemptEncryption: false,
       },
       // Please use the relative path to the google-services.json file
-      googleServicesFile: process.env.EXPO_PUBLIC_IOS_GOOGLE_SERVICES_FILE,
-      entitlements: { 'aps-environment': 'production' },
-      associatedDomains: ['applinks:app.chatwoot.com'],
+      googleServicesFile: './GoogleService-Info.plist',
+      entitlements: {
+        'aps-environment': 'production',
+      },
+      associatedDomains: ['applinks:chatwoot.daarululuumlido.com'],
     },
     android: {
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ffffff' },
-      package: 'com.chatwoot.app',
-      permissions: ['android.permission.CAMERA', 'android.permission.RECORD_AUDIO'],
+      package: 'com.daarululuumlido.chatwoot',
+      permissions: [
+        'android.permission.CAMERA',
+        'android.permission.READ_EXTERNAL_STORAGE',
+        'android.permission.WRITE_EXTERNAL_STORAGE',
+        'android.permission.RECORD_AUDIO',
+        'android.permission.READ_MEDIA_IMAGES',
+      ],
       // Please use the relative path to the google-services.json file
       googleServicesFile: './google-services.json',
       intentFilters: [
