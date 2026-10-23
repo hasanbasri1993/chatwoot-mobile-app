@@ -110,6 +110,7 @@ module.exports = ({ config }) => ({
     './with-android-notification-channel.js',
     './with-notifee-maven-repo.js',
     './with-ios-modular-headers.js',
+    './with-ios-pod-fixes.js',
   ],
   androidNavigationBar: { backgroundColor: '#ffffff' },
 });
