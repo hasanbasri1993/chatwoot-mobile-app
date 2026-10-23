@@ -13,3 +13,19 @@ index eb1cc942ba5ec3ff7e359be3b0a3822b24685fe9..9f019722e829a0f3df3ae3c2fb663940
      throw InvalidDateException()
    }
    return Date(timeIntervalSince1970: milliseconds.rounded(.towardZero) / 1000.0)
+diff --git a/apple/scripts/build-xcframework.sh b/apple/scripts/build-xcframework.sh
+index 28d3249bebc01086a04487b8b1ab12de225abacd..6106ad7bc0e12b2434bac58bbd355012e0548a88 100755
+--- a/apple/scripts/build-xcframework.sh
++++ b/apple/scripts/build-xcframework.sh
+@@ -217,7 +217,10 @@ build_slice() {
+     DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+     COMPILER_INDEX_STORE_ENABLE=NO \
+     SWIFT_COMPILATION_MODE=wholemodule \
+-  )
++  ) 2>&1 | { grep -v 'failed with exit code 0 but produced no further output' || true; }
++  # Newer Xcode prints a spurious "error: ... exit code 0" line from the nested
++  # build; the parent archive treats any "error:" output as a failure. pipefail
++  # still propagates xcodebuild's real exit status.
+ 
+   local product_path="${BUILD_PRODUCTS_PATH}/${build_dir_name}"
+   local framework_src="${product_path}/PackageFrameworks/${PACKAGE_NAME}.framework"
