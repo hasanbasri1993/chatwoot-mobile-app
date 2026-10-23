@@ -9,7 +9,7 @@ module.exports = ({ config }) => ({
   scheme: 'chatwootapp',
   ios: {
     supportsTablet: true,
-    buildNumber: '51',
+    buildNumber: '52',
     bundleIdentifier: 'com.daarululuumlido.chatwoot',
     infoPlist: {
       NSCameraUsageDescription: 'This app requires access to the camera to upload images and videos.',
@@ -28,7 +28,7 @@ module.exports = ({ config }) => ({
   android: {
     adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ffffff' },
     package: 'com.daarululuumlido.chatwoot',
-    versionCode: 51,
+    versionCode: 52,
     permissions: [
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
