@@ -18,6 +18,9 @@ export interface ConversationState {
   isLoadingMessages: boolean;
   isAllConversationsFetched: boolean;
   isAllMessagesFetched: boolean;
+  // Whether all messages newer than the loaded set are fetched. False only after
+  // a search jump, which loads a window that may sit before the latest messages.
+  isAllNewerMessagesFetched: boolean;
   isConversationFetching: boolean;
   isChangingConversationStatus: boolean;
 }
@@ -35,9 +38,81 @@ const initialState = conversationAdapter.getInitialState<ConversationState>({
   isAllConversationsFetched: false,
   isLoadingMessages: false,
   isAllMessagesFetched: false,
+  isAllNewerMessagesFetched: true,
   isConversationFetching: false,
   isChangingConversationStatus: false,
 });
+
+const isOutdatedConversationUpdate = (
+  existingConversation: Conversation | undefined,
+  incomingConversation: Conversation,
+) => {
+  const existingUpdatedAt = existingConversation?.updatedAt;
+  const incomingUpdatedAt = incomingConversation.updatedAt;
+
+  return (
+    typeof existingUpdatedAt === 'number' &&
+    typeof incomingUpdatedAt === 'number' &&
+    incomingUpdatedAt < existingUpdatedAt
+  );
+};
+
+const shouldKeepLocalStatusMarker = (
+  existingConversation: Conversation | undefined,
+  incomingConversation: Conversation,
+): existingConversation is Conversation => {
+  const localStatusUpdatedAt = existingConversation?.localStatusUpdatedAt;
+  const existingUpdatedAt = existingConversation?.updatedAt;
+  const incomingUpdatedAt = incomingConversation.updatedAt;
+
+  return (
+    typeof localStatusUpdatedAt === 'number' &&
+    typeof existingUpdatedAt === 'number' &&
+    typeof incomingUpdatedAt === 'number' &&
+    localStatusUpdatedAt === existingUpdatedAt &&
+    incomingUpdatedAt <= localStatusUpdatedAt
+  );
+};
+
+const shouldPreserveLocalStatus = (
+  existingConversation: Conversation | undefined,
+  incomingConversation: Conversation,
+) => {
+  return (
+    shouldKeepLocalStatusMarker(existingConversation, incomingConversation) &&
+    existingConversation?.status !== incomingConversation.status &&
+    existingConversation?.localStatusPreviousStatus === incomingConversation.status
+  );
+};
+
+const preserveLocalStatus = (
+  existingConversation: Conversation | undefined,
+  incomingConversation: Conversation,
+) => {
+  if (!shouldKeepLocalStatusMarker(existingConversation, incomingConversation)) {
+    return {
+      ...incomingConversation,
+      localStatusUpdatedAt: undefined,
+      localStatusPreviousStatus: undefined,
+    };
+  }
+
+  if (!shouldPreserveLocalStatus(existingConversation, incomingConversation)) {
+    return {
+      ...incomingConversation,
+      localStatusUpdatedAt: existingConversation?.localStatusUpdatedAt,
+      localStatusPreviousStatus: existingConversation?.localStatusPreviousStatus,
+    };
+  }
+
+  return {
+    ...incomingConversation,
+    status: existingConversation.status,
+    snoozedUntil: existingConversation.snoozedUntil,
+    localStatusUpdatedAt: existingConversation.localStatusUpdatedAt,
+    localStatusPreviousStatus: existingConversation.localStatusPreviousStatus,
+  };
+};
 
 const conversationSlice = createSlice({
   name: 'conversation',
@@ -52,7 +127,15 @@ const conversationSlice = createSlice({
       const conversation = action.payload as Conversation;
       const conversationIds = conversationAdapter.getSelectors().selectIds(state);
       if (conversationIds.includes(conversation.id)) {
-        const { messages, ...conversationAttributes } = conversation;
+        const existingConversation = state.entities[conversation.id];
+        if (isOutdatedConversationUpdate(existingConversation, conversation)) {
+          return;
+        }
+
+        const { messages, ...conversationAttributes } = preserveLocalStatus(
+          existingConversation,
+          conversation,
+        );
         conversationAdapter.updateOne(state, {
           id: conversation.id,
           changes: conversationAttributes,
@@ -108,7 +191,16 @@ const conversationSlice = createSlice({
       })
       .addCase(conversationActions.fetchConversations.fulfilled, (state, { payload }) => {
         const { conversations, meta } = payload;
-        conversationAdapter.upsertMany(state, conversations);
+        const conversationsToUpsert = conversations.filter(
+          conversation =>
+            !isOutdatedConversationUpdate(state.entities[conversation.id], conversation),
+        );
+        conversationAdapter.upsertMany(
+          state,
+          conversationsToUpsert.map(conversation =>
+            preserveLocalStatus(state.entities[conversation.id], conversation),
+          ),
+        );
         state.isLoadingConversations = false;
         state.isAllConversationsFetched = conversations.length < 20 || false;
         state.meta = meta;
@@ -122,11 +214,23 @@ const conversationSlice = createSlice({
       })
       .addCase(conversationActions.fetchConversation.fulfilled, (state, { payload }) => {
         const { conversation } = payload;
-        conversationAdapter.upsertOne(state, conversation);
+        if (isOutdatedConversationUpdate(state.entities[conversation.id], conversation)) {
+          state.isConversationFetching = false;
+          return;
+        }
+
+        conversationAdapter.upsertOne(
+          state,
+          preserveLocalStatus(state.entities[conversation.id], conversation),
+        );
         state.isConversationFetching = false;
         state.isAllMessagesFetched = false;
       })
-      .addCase(conversationActions.fetchConversation.rejected, state => {
+      .addCase(conversationActions.fetchConversation.rejected, (state, action) => {
+        // Ignore responses fenced during an account switch; a fresh fetch is already running.
+        if (action.error?.name === 'CanceledError') {
+          return;
+        }
         state.isConversationFetching = false;
         state.error = state.error || 'Unable to load conversation';
       })
@@ -139,22 +243,30 @@ const conversationSlice = createSlice({
           return;
         }
         const conversation = state.entities[conversationId];
-        const { afterId } = action.meta.arg;
+        const { afterId, beforeId, resetMessages } = action.meta.arg;
 
-        if (afterId) {
-          // Search navigation: merge messages, deduplicate by ID, and sort
-          // descending (newest first) to match the array order that normal
-          // pagination produces via unshift — lastMessageId() relies on this.
+        if (resetMessages) {
+          // Search navigation: replace the list with the target + older window so
+          // there is no gap with previously loaded messages. Newer messages are
+          // fetched separately and paged in on scroll-down.
+          conversation.messages = [...messages].sort((a, b) => b.createdAt - a.createdAt);
+          state.isAllMessagesFetched = messages.length < 20;
+          state.isAllNewerMessagesFetched = false;
+        } else if (afterId != null) {
+          // Load newer: merge, dedupe, sort newest-first.
           const existingIds = new Set(conversation.messages.map(m => m.id));
           const newMessages = messages.filter(m => !existingIds.has(m.id));
           conversation.messages.push(...newMessages);
           conversation.messages.sort((a, b) => b.createdAt - a.createdAt);
-          // Reset so older-message pagination isn't blocked after search nav
-          state.isAllMessagesFetched = false;
+          state.isAllNewerMessagesFetched = messages.length < 20;
         } else {
-          // Normal pagination: prepend older messages
+          // First load or older pagination: prepend older messages.
           conversation.messages.unshift(...messages);
           state.isAllMessagesFetched = messages.length < 20 || false;
+          // A first load (no beforeId) lands on the latest messages.
+          if (beforeId == null) {
+            state.isAllNewerMessagesFetched = true;
+          }
         }
 
         conversation.meta = {
@@ -175,8 +287,10 @@ const conversationSlice = createSlice({
         if (!conversation) {
           return;
         }
+        conversation.localStatusPreviousStatus = conversation.status;
         conversation.status = currentStatus;
         conversation.snoozedUntil = snoozedUntil;
+        conversation.localStatusUpdatedAt = conversation.updatedAt;
         state.isChangingConversationStatus = false;
       })
       .addCase(conversationActions.toggleConversationStatus.rejected, state => {
@@ -228,7 +342,8 @@ const conversationSlice = createSlice({
         const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
         if (messageIndex !== -1) {
           const message = conversation.messages[messageIndex];
-          const existing = message.contentAttributes ?? ({} as NonNullable<Message['contentAttributes']>);
+          const existing =
+            message.contentAttributes ?? ({} as NonNullable<Message['contentAttributes']>);
           conversation.messages[messageIndex] = {
             ...message,
             contentAttributes: {

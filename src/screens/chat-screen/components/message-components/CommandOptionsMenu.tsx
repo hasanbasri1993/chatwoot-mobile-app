@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Linking, Platform, Pressable, Text } from 'react-native';
 import {
   pick,
@@ -11,19 +11,28 @@ import { Asset, launchCamera, launchImageLibrary } from 'react-native-image-pick
 import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppDispatch } from '@/hooks';
+import { useAppDispatch, useAppSelector } from '@/hooks';
+import type { AppDispatch } from '@/store';
 import { updateAttachments } from '@/store/conversation/sendMessageSlice';
-import { useRefsContext } from '@/context';
-import { AttachFileIcon, CameraIcon, MacrosIcon, PhotosIcon } from '@/svg-icons';
+import { useChatWindowContext, useRefsContext } from '@/context';
+import {
+  AttachFileIcon,
+  CameraIcon,
+  MacrosIcon,
+  PhotosIcon,
+  WhatsAppMonochromeIcon,
+} from '@/svg-icons';
 import { tailwind } from '@/theme';
-import { useHaptic, useScaleAnimation } from '@/utils';
+import { isAWhatsAppChannel, useHaptic, useScaleAnimation } from '@/utils';
 import { Icon } from '@/components-next/common';
 import { MAXIMUM_FILE_UPLOAD_SIZE } from '@/constants';
 import i18n from '@/i18n';
 import { showToast } from '@/utils/toastUtils';
 import { findFileSize } from '@/utils/fileUtils';
+import { selectConversationById } from '@/store/conversation/conversationSelectors';
+import { selectInboxById } from '@/store/inbox/inboxSelectors';
 
-export const handleOpenPhotosLibrary = async dispatch => {
+export const handleOpenPhotosLibrary = async (dispatch: AppDispatch) => {
   const pickedAssets = await launchImageLibrary({
     quality: 1,
     selectionLimit: 4,
@@ -58,7 +67,7 @@ export const handleOpenPhotosLibrary = async dispatch => {
   }
 };
 
-const handleLaunchCamera = async dispatch => {
+const handleLaunchCamera = async (dispatch: AppDispatch) => {
   request(Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA).then(
     async result => {
       if (RESULTS.BLOCKED === result) {
@@ -117,7 +126,7 @@ const mapObject = (originalObject: DocumentPickerResponse): Asset[] => {
   ];
 };
 
-const handleAttachFile = async dispatch => {
+const handleAttachFile = async (dispatch: AppDispatch) => {
   try {
     const result = await pick({
       type: [
@@ -151,30 +160,41 @@ const handleAttachFile = async dispatch => {
 
 const ADD_MENU_OPTIONS = [
   {
+    id: 'photos',
     icon: <PhotosIcon />,
-    title: 'Photos',
+    titleKey: 'CONVERSATION_ATTACHMENT.OPTIONS.PHOTOS',
     handlePress: handleOpenPhotosLibrary,
   },
   {
+    id: 'camera',
     icon: <CameraIcon />,
-    title: 'Camera',
+    titleKey: 'CONVERSATION_ATTACHMENT.OPTIONS.CAMERA',
     handlePress: handleLaunchCamera,
   },
   {
+    id: 'attach_file',
     icon: <AttachFileIcon />,
-    title: 'Attach File',
+    titleKey: 'CONVERSATION_ATTACHMENT.OPTIONS.ATTACH_FILE',
     handlePress: handleAttachFile,
   },
   {
+    id: 'macros',
     icon: <MacrosIcon />,
-    title: 'Macros',
+    titleKey: 'CONVERSATION_ATTACHMENT.OPTIONS.MACROS',
     handlePress: () => {},
   },
 ];
 
-export const validateFileAndSetAttachments = async (dispatch, attachment) => {
+const TEMPLATES_MENU_OPTION = {
+  id: 'whatsapp_templates',
+  icon: <WhatsAppMonochromeIcon />,
+  titleKey: 'CONVERSATION_ATTACHMENT.OPTIONS.WHATSAPP_TEMPLATES',
+  handlePress: () => {},
+};
+
+export const validateFileAndSetAttachments = async (dispatch: AppDispatch, attachment: Asset) => {
   const { fileSize } = attachment;
-  if (findFileSize(fileSize) <= MAXIMUM_FILE_UPLOAD_SIZE) {
+  if (fileSize !== undefined && findFileSize(fileSize) <= MAXIMUM_FILE_UPLOAD_SIZE) {
     dispatch(updateAttachments([attachment]));
   } else {
     showToast({ message: i18n.t('CONVERSATION.FILE_SIZE_LIMIT') });
@@ -189,7 +209,7 @@ type MenuOptionProps = {
 const MenuOption = (props: MenuOptionProps) => {
   const { index, menuOption } = props;
   const dispatch = useAppDispatch();
-  const { macrosListSheetRef } = useRefsContext();
+  const { macrosListSheetRef, whatsAppTemplatesSheetRef } = useRefsContext();
 
   const { animatedStyle, handlers } = useScaleAnimation();
   const hapticSelection = useHaptic();
@@ -197,8 +217,11 @@ const MenuOption = (props: MenuOptionProps) => {
   const handlePress = () => {
     hapticSelection?.();
     menuOption?.handlePress(dispatch);
-    if (menuOption.title === 'Macros') {
+    if (menuOption.id === 'macros') {
       macrosListSheetRef.current?.present();
+    }
+    if (menuOption.id === 'whatsapp_templates') {
+      whatsAppTemplatesSheetRef.current?.present();
     }
   };
 
@@ -213,7 +236,7 @@ const MenuOption = (props: MenuOptionProps) => {
             style={tailwind.style(
               'text-base font-inter-normal-20 leading-[18px] tracking-[0.24px] text-gray-950 pl-5',
             )}>
-            {menuOption.title}
+            {i18n.t(menuOption.titleKey)}
           </Text>
         </Animated.View>
       </Pressable>
@@ -224,16 +247,28 @@ const MenuOption = (props: MenuOptionProps) => {
 export const CommandOptionsMenu = () => {
   const { bottom } = useSafeAreaInsets();
   const isAndroid = Platform.OS === 'android';
-  const containerHeight = isAndroid
-    ? 210 + (bottom === 0 ? 16 : bottom)
-    : 175 + (bottom === 0 ? 16 : bottom);
+  const { conversationId } = useChatWindowContext();
+  const conversation = useAppSelector(state => selectConversationById(state, conversationId));
+  const inboxId = conversation?.inboxId;
+  const inbox = useAppSelector(state => (inboxId ? selectInboxById(state, inboxId) : undefined));
+
+  const menuOptions = useMemo(() => {
+    if (inbox && isAWhatsAppChannel(inbox)) {
+      return [...ADD_MENU_OPTIONS, TEMPLATES_MENU_OPTION];
+    }
+    return ADD_MENU_OPTIONS;
+  }, [inbox]);
+
+  const perItemHeight = isAndroid ? 53 : 44;
+  const containerHeight = perItemHeight * menuOptions.length + (bottom === 0 ? 16 : bottom);
+
   return (
     <Animated.View
-      entering={SlideInDown.springify().damping(38).stiffness(240)}
-      exiting={SlideOutDown.springify().damping(38).stiffness(240)}
+      entering={SlideInDown.springify().mass(1).damping(29).stiffness(140)}
+      exiting={SlideOutDown.springify().mass(1).damping(29).stiffness(140)}
       style={tailwind.style('mx-1 pt-2 items-start', `h-[${containerHeight}px]`)}>
-      {ADD_MENU_OPTIONS.map((menuOption, index) => {
-        return <MenuOption key={menuOption.title} {...{ menuOption, index }} />;
+      {menuOptions.map((menuOption, index) => {
+        return <MenuOption key={menuOption.id} {...{ menuOption, index }} />;
       })}
     </Animated.View>
   );

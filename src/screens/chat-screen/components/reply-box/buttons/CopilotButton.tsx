@@ -19,17 +19,18 @@ type CopilotButtonProps = PressableProps & {
   isThinking?: boolean;
 };
 
-export const CopilotButton = ({ isActive = false, isThinking = false, ...props }: CopilotButtonProps) => {
+export const CopilotButton = ({
+  isActive = false,
+  isThinking = false,
+  ...props
+}: CopilotButtonProps) => {
   const { animatedStyle, handlers } = useScaleAnimation();
   const starPhase = useSharedValue(0);
 
   useEffect(() => {
     if (isThinking) {
       starPhase.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 600 }),
-          withTiming(0, { duration: 600 }),
-        ),
+        withSequence(withTiming(1, { duration: 600 }), withTiming(0, { duration: 600 })),
         -1,
         false,
       );
@@ -51,7 +52,7 @@ export const CopilotButton = ({ isActive = false, isThinking = false, ...props }
 
   return (
     <Animated.View
-      layout={LinearTransition.springify().damping(20).stiffness(180)}
+      layout={LinearTransition.springify().mass(1).damping(15).stiffness(105)}
       style={animatedStyle}>
       <Pressable
         {...props}
@@ -60,10 +61,7 @@ export const CopilotButton = ({ isActive = false, isThinking = false, ...props }
         <Animated.View
           style={tailwind.style('flex items-center justify-center h-10 w-10 rounded-2xl')}>
           {isThinking ? (
-            <AnimatedSparkleIcon
-              smallStarStyle={smallStarStyle}
-              largeStarStyle={largeStarStyle}
-            />
+            <AnimatedSparkleIcon smallStarStyle={smallStarStyle} largeStarStyle={largeStarStyle} />
           ) : (
             <Icon icon={<SparkleIcon filled={isActive} />} size={24} />
           )}

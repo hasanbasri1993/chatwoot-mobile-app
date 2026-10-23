@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -132,6 +133,22 @@ const Tabs = () => {
     }
   }, [accountId, pubSubToken, userId, webSocketUrl]);
 
+  // Re-run the account-scoped bootstrap when the active account changes, e.g. after a
+  // cross-account push switch while the tabs stay mounted (mount is handled above).
+  const isInitialAccountMount = useRef(true);
+  useEffect(() => {
+    if (isInitialAccountMount.current) {
+      isInitialAccountMount.current = false;
+      return;
+    }
+    dispatch(inboxActions.fetchInboxes());
+    dispatch(labelActions.fetchLabels());
+    dispatch(dashboardAppActions.index());
+    dispatch(customAttributeActions.index());
+    initActionCable();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId]);
+
   useEffect(() => {
     dispatch(settingsActions.getChatwootVersion({ installationUrl: installationUrl }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -189,7 +206,7 @@ export const AppTabs = () => {
         />
         <Stack.Screen
           options={{
-            presentation: 'formSheet',
+            presentation: Platform.OS === 'ios' ? 'formSheet' : 'modal',
             animation: 'slide_from_bottom',
           }}
           name="ContactDetails"
@@ -197,7 +214,7 @@ export const AppTabs = () => {
         />
         <Stack.Screen
           options={{
-            presentation: 'formSheet',
+            presentation: Platform.OS === 'ios' ? 'formSheet' : 'modal',
             animation: 'slide_from_bottom',
           }}
           name="Dashboard"

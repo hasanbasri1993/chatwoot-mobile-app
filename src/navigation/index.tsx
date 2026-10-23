@@ -1,12 +1,16 @@
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import {
+  getMessaging,
+  getInitialNotification,
+  onNotificationOpenedApp,
+  setBackgroundMessageHandler,
+} from '@react-native-firebase/messaging';
 import { getStateFromPath } from '@react-navigation/native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppTabs } from './tabs/AppTabs';
 import i18n from 'i18n';
@@ -15,6 +19,8 @@ import { findConversationLinkFromPush, findNotificationFromFCM } from '@/utils/p
 import { extractConversationIdFromUrl } from '@/utils/conversationUtils';
 import { useAppSelector } from '@/hooks';
 import { selectInstallationUrl, selectLocale } from '@/store/settings/settingsSelectors';
+import { selectCurrentUserAccountId } from '@/store/auth/authSelectors';
+import { resolveAccountSwitch, switchAccount } from '@/utils/accountUtils';
 import { SSO_CALLBACK_URL } from '@/constants';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RefsProvider } from '@/context';
@@ -28,7 +34,7 @@ import Inter50024 from '@/assets/fonts/Inter-500-24.ttf';
 import Inter58024 from '@/assets/fonts/Inter-580-24.ttf';
 import Inter60020 from '@/assets/fonts/Inter-600-20.ttf';
 
-messaging().setBackgroundMessageHandler(async remoteMessage => {
+setBackgroundMessageHandler(getMessaging(), async remoteMessage => {
   console.log('Message handled in the background!', remoteMessage);
 });
 
@@ -46,6 +52,7 @@ export const AppNavigationContainer = () => {
 
   const installationUrl = useAppSelector(selectInstallationUrl);
   const locale = useAppSelector(selectLocale);
+  const currentAccountId = useAppSelector(selectCurrentUserAccountId);
 
   const linking = {
     prefixes: [installationUrl, SSO_CALLBACK_URL],
@@ -54,6 +61,7 @@ export const AppNavigationContainer = () => {
         ChatScreen: {
           path: 'app/accounts/:accountId/conversations/:conversationId/:primaryActorId?/:primaryActorType?',
           parse: {
+            accountId: (accountId: string) => parseInt(accountId),
             conversationId: (conversationId: string) => parseInt(conversationId),
             primaryActorId: (primaryActorId: string) => parseInt(primaryActorId),
             primaryActorType: (primaryActorType: string) => decodeURIComponent(primaryActorType),
@@ -61,9 +69,8 @@ export const AppNavigationContainer = () => {
         },
       },
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // getStateFromPath: App running, receives deep link - handles SSO callbacks and conversation navigation
-    getStateFromPath: (path: string, config: any) => {
+    getStateFromPath: (path: string, config: Parameters<typeof getStateFromPath>[1]) => {
       // Handle SSO callback - App running, receives deep link
       if (path.includes(SSO_CALLBACK_URL) || path.includes('auth/saml')) {
         const ssoParams = SsoUtils.parseCallbackUrl(`chatwootapp://${path}`);
@@ -75,6 +82,7 @@ export const AppNavigationContainer = () => {
 
       let primaryActorId = null;
       let primaryActorType = null;
+      let accountId = null;
       const state = getStateFromPath(path, config);
       const { routes } = state || {};
 
@@ -90,7 +98,14 @@ export const AppNavigationContainer = () => {
         const { params } = routes[0];
         primaryActorId = (params as { primaryActorId?: number })?.primaryActorId;
         primaryActorType = (params as { primaryActorType?: string })?.primaryActorType;
+        accountId = (params as { accountId?: number })?.accountId;
       }
+
+      const targetAccountId = resolveAccountSwitch(accountId);
+      if (targetAccountId) {
+        switchAccount(dispatch, targetAccountId);
+      }
+
       return {
         routes: [
           {
@@ -121,16 +136,19 @@ export const AppNavigationContainer = () => {
       }
 
       // getInitialNotification: When the application is opened from a quit state.
-      const message = await messaging().getInitialNotification();
+      const message = await getInitialNotification(getMessaging());
       if (message) {
         const notification = findNotificationFromFCM({ message });
-        const camelCaseNotification = transformNotification(notification);
-        const conversationLink = findConversationLinkFromPush({
-          notification: camelCaseNotification,
-          installationUrl,
-        });
-        if (conversationLink) {
-          return conversationLink;
+        if (notification) {
+          const camelCaseNotification = transformNotification(notification);
+          const conversationLink = findConversationLinkFromPush({
+            notification: camelCaseNotification,
+            installationUrl,
+            currentAccountId,
+          });
+          if (conversationLink) {
+            return conversationLink;
+          }
         }
       }
       return undefined;
@@ -152,17 +170,20 @@ export const AppNavigationContainer = () => {
       const subscription = Linking.addEventListener('url', onReceiveURL);
 
       //onNotificationOpenedApp: When the application is running, but in the background.
-      const unsubscribeNotification = messaging().onNotificationOpenedApp(message => {
+      const unsubscribeNotification = onNotificationOpenedApp(getMessaging(), message => {
         if (message) {
           const notification = findNotificationFromFCM({ message });
-          const camelCaseNotification = transformNotification(notification);
+          if (notification) {
+            const camelCaseNotification = transformNotification(notification);
 
-          const conversationLink = findConversationLinkFromPush({
-            notification: camelCaseNotification,
-            installationUrl,
-          });
-          if (conversationLink) {
-            listener(conversationLink);
+            const conversationLink = findConversationLinkFromPush({
+              notification: camelCaseNotification,
+              installationUrl,
+              currentAccountId,
+            });
+            if (conversationLink) {
+              listener(conversationLink);
+            }
           }
         }
       });
@@ -197,11 +218,9 @@ export const AppNavigationContainer = () => {
         routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
       }}
       fallback={<ActivityIndicator animating />}>
-      <BottomSheetModalProvider>
-        <View style={styles.navigationLayout} onLayout={onLayoutRootView}>
-          <AppTabs />
-        </View>
-      </BottomSheetModalProvider>
+      <View style={styles.navigationLayout} onLayout={onLayoutRootView}>
+        <AppTabs />
+      </View>
     </NavigationContainer>
   );
 };

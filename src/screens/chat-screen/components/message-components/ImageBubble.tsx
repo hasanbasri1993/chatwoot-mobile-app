@@ -2,18 +2,29 @@ import React from 'react';
 import { Image } from 'expo-image';
 import { Galeria } from '@nandorojo/galeria';
 import { tailwind } from '@/theme';
-
-type ImageCellProps = {
-  imageSrc: string;
-};
-
-type ImageContainerProps = Pick<ImageCellProps, 'imageSrc'> & {
-  width?: number;
-  height?: number;
-};
+import { useImageDimensions } from '@/hooks/useImageDimensions';
+import type { ImageCellProps, ImageContainerProps } from '@/hooks/useImageDimensions';
 
 export const ImageBubbleContainer = (props: ImageContainerProps) => {
-  const { imageSrc, height = 215, width = 400 } = props;
+  const { imageSrc, maxWidth = 300, maxHeight = 360 } = props;
+  const imageStyle = useImageDimensions(imageSrc, maxWidth, maxHeight);
+
+  return (
+    <Galeria urls={[imageSrc]}>
+      <Galeria.Image>
+        <Image
+          source={{ uri: imageSrc }}
+          contentFit="contain"
+          style={[tailwind.style('bg-gray-100 overflow-hidden'), imageStyle]}
+        />
+      </Galeria.Image>
+    </Galeria>
+  );
+};
+
+// Fixed-size media thumbnail.
+export const ImageThumbnail = (props: ImageCellProps) => {
+  const { imageSrc } = props;
 
   return (
     <Galeria urls={[imageSrc]}>
@@ -21,10 +32,7 @@ export const ImageBubbleContainer = (props: ImageContainerProps) => {
         <Image
           source={{ uri: imageSrc }}
           contentFit="cover"
-          style={[
-            tailwind.style('h-full w-full bg-gray-100 overflow-hidden'),
-            { width: width, height: height },
-          ]}
+          style={tailwind.style('h-[72px] w-[72px] rounded-xl bg-gray-100 overflow-hidden')}
         />
       </Galeria.Image>
     </Galeria>

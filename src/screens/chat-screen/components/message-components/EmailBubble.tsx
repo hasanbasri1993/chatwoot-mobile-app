@@ -7,11 +7,13 @@ import { tailwind } from '@/theme';
 import { EmailMeta } from './EmailMeta';
 import { Message } from '@/types';
 import { MarkdownBubble } from './MarkdownBubble';
+import { MessageAttachments } from './MessageAttachments';
 import { MESSAGE_TYPES } from '@/constants';
 
 type EmailBubbleProps = {
   item: Message;
   variant: string;
+  orientation?: string;
 };
 
 export const EmailBubble = (props: EmailBubbleProps) => {
@@ -39,6 +41,26 @@ export const EmailBubble = (props: EmailBubbleProps) => {
 
   const FormattedEmail = emailMessageContent().replace('height:100%;', '');
 
+  const baseStyle = `
+        * {
+          font-family: system,-apple-system,".SFNSText-Regular","San Francisco",Roboto,"Segoe UI","Helvetica Neue","Lucida Grande",sans-serif;
+          font-size: 16px;
+        }
+        img{
+          max-width: 100% !important;
+        }
+      `;
+  const outgoingReadableStyle = `
+        :root {
+          color-scheme: light;
+        }
+        html, body {
+          background: #ffffff;
+          color: #111827;
+        }
+      `;
+  const emailCustomStyle = isOutgoing ? `${outgoingReadableStyle}${baseStyle}` : baseStyle;
+
   return (
     <React.Fragment>
       {contentAttributes && <EmailMeta {...{ contentAttributes, sender }} />}
@@ -50,15 +72,8 @@ export const EmailBubble = (props: EmailBubbleProps) => {
             <AutoHeightWebView
               style={{ width: '100%', minHeight: 1, minWidth: '100%' }}
               scrollEnabled={false}
-              customStyle={`
-        * {
-          font-family: system,-apple-system,".SFNSText-Regular","San Francisco",Roboto,"Segoe UI","Helvetica Neue","Lucida Grande",sans-serif;
-          font-size: 16px;
-        } 
-        img{
-          max-width: 100% !important;
-        }
-      `}
+              forceDarkOn={false}
+              customStyle={emailCustomStyle}
               source={{
                 html: FormattedEmail,
               }}
@@ -66,6 +81,12 @@ export const EmailBubble = (props: EmailBubbleProps) => {
             />
           )}
         </Animated.View>
+        <MessageAttachments
+          item={messageItem}
+          variant={props.variant}
+          orientation={props.orientation}
+          mediaSize="thumbnail"
+        />
       </Animated.View>
     </React.Fragment>
   );

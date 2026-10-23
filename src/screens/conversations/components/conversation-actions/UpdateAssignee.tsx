@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 import { useRefsContext } from '@/context';
 import { tailwind } from '@/theme';
@@ -11,7 +10,10 @@ import { SelfAssign, TickIcon } from '@/svg-icons';
 
 import { assignableAgentActions } from '@/store/assignable-agent/assignableAgentActions';
 import { useAppDispatch, useAppSelector } from '@/hooks';
-import { selectAssignableAgentsByInboxId } from '@/store/assignable-agent/assignableAgentSelectors';
+import {
+  selectAssignableAgents,
+  selectAssignableAgentsByInboxId,
+} from '@/store/assignable-agent/assignableAgentSelectors';
 import {
   selectSelectedIds,
   selectSelectedInboxes,
@@ -88,13 +90,6 @@ export const UpdateAssignee = () => {
     inboxIds.some(id => (state.assignableAgents.records[id]?.length ?? 0) > 0),
   );
 
-  const handleFocus = () => {
-    actionsModalSheetRef.current?.expand();
-  };
-  const handleBlur = () => {
-    actionsModalSheetRef.current?.dismiss({ overshootClamping: true });
-  };
-
   useEffect(() => {
     dispatch(assignableAgentActions.fetchAgents({ inboxIds }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,7 +103,7 @@ export const UpdateAssignee = () => {
     if (isMultipleConversationsSelected) {
       const payload = { type: 'Conversation', ids: selectedIds, fields: { assignee_id: agent.id } };
       await dispatch(conversationActions.bulkAction(payload));
-      actionsModalSheetRef.current?.dismiss({ overshootClamping: true });
+      actionsModalSheetRef.current?.dismiss();
     } else {
       if (!selectedConversation?.id) return;
       await dispatch(
@@ -121,33 +116,32 @@ export const UpdateAssignee = () => {
       showToast({
         message: i18n.t('CONVERSATION.ASSIGN_CHANGE'),
       });
-      actionsModalSheetRef.current?.dismiss({ overshootClamping: true });
+      actionsModalSheetRef.current?.dismiss();
     }
   };
 
-  const selfAgent = agents.find(agent => agent.id === userId);
+  // Read from the unfiltered records so the row stays available while searching.
+  const agentRecords = useAppSelector(selectAssignableAgents);
+  const selfAgent = inboxIds
+    .flatMap(id => agentRecords[id] || [])
+    .find(agent => agent.id === userId);
 
   return (
     <React.Fragment>
       <SearchBar
-        isInsideBottomSheet
-        onFocus={handleFocus}
-        onBlur={handleBlur}
         onChangeText={handleChangeText}
         placeholder={i18n.t('CONVERSATION.ASSIGNEE.AGENTS.SEARCH_AGENT')}
       />
 
-      <BottomSheetScrollView
-        showsVerticalScrollIndicator={false}
-        style={tailwind.style('my-1 pl-3')}>
+      <ScrollView showsVerticalScrollIndicator={false} style={tailwind.style('my-1 pl-3')}>
         {isFetching && !hasAgentRecords ? (
           <ActivityIndicator />
         ) : (
           <>
-            {!isSelfAssign && (
+            {!isSelfAssign && selfAgent && (
               <Pressable
                 style={tailwind.style('flex flex-row items-center')}
-                onPress={() => handleAssigneePress(selfAgent as Agent)}>
+                onPress={() => handleAssigneePress(selfAgent)}>
                 <Animated.View style={tailwind.style('p-0.5')}>
                   <Icon icon={<SelfAssign />} size={24} />
                 </Animated.View>
@@ -178,7 +172,7 @@ export const UpdateAssignee = () => {
             })}
           </>
         )}
-      </BottomSheetScrollView>
+      </ScrollView>
     </React.Fragment>
   );
 };

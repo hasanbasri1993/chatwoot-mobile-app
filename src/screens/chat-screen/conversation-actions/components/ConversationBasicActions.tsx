@@ -8,21 +8,24 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Icon } from '@/components-next';
-import { OpenIcon, ResolvedFilledIcon, PendingFilledIcon, SnoozedFilledIcon } from '@/svg-icons';
+import {
+  StatusOpenIcon,
+  StatusResolvedIcon,
+  PendingFilledIcon,
+  SnoozedFilledIcon,
+} from '@/svg-icons';
 import { tailwind } from '@/theme';
+import i18n from '@/i18n';
 import { useHaptic, useScaleAnimation } from '@/utils';
 import { ConversationStatus } from '@/types';
 
 import { ConversationActionType } from '../ConversationActions';
-
-type ConversationStateType = 'open' | 'pending' | 'snooze' | 'resolve';
 
 type ConversationActionOptionsType = {
   backgroundActionColor: string;
   backgroundActionPressedColor: string;
   borderActionColor: string;
   actionIcon: React.JSX.Element;
-  actionText: ConversationStateType;
   actionStatus: ConversationStatus | 'open';
 };
 
@@ -34,8 +37,7 @@ const conversationActionOptions: ConversationActionOptionsType[] = [
     backgroundActionColor: 'bg-gray-100',
     backgroundActionPressedColor: 'bg-gray-200',
     borderActionColor: 'bg-gray-700',
-    actionIcon: <OpenIcon stroke={tailwind.color('text-gray-700') as string} />,
-    actionText: 'open',
+    actionIcon: <StatusOpenIcon />,
     actionStatus: 'open',
   },
   {
@@ -43,7 +45,6 @@ const conversationActionOptions: ConversationActionOptionsType[] = [
     backgroundActionPressedColor: 'bg-amber-200',
     borderActionColor: 'bg-amber-700',
     actionIcon: <PendingFilledIcon />,
-    actionText: 'pending',
     actionStatus: 'pending',
   },
   {
@@ -51,15 +52,13 @@ const conversationActionOptions: ConversationActionOptionsType[] = [
     backgroundActionPressedColor: 'bg-indigo-200',
     borderActionColor: 'bg-indigo-700',
     actionIcon: <SnoozedFilledIcon />,
-    actionText: 'snooze',
     actionStatus: 'snoozed',
   },
   {
     backgroundActionColor: 'bg-green-100',
     backgroundActionPressedColor: 'bg-green-200',
     borderActionColor: 'bg-green-700',
-    actionIcon: <ResolvedFilledIcon />,
-    actionText: 'resolve',
+    actionIcon: <StatusResolvedIcon />,
     actionStatus: 'resolved',
   },
 ];
@@ -91,13 +90,7 @@ const ConversationActionOption = (props: ConversationActionOptionProps) => {
     } else {
       actionActive.value = withSpring(0);
     }
-  }, [
-    actionActive,
-    conversationAction.actionStatus,
-    conversationAction.actionText,
-    status,
-    isMuted,
-  ]);
+  }, [actionActive, conversationAction.actionStatus, status, isMuted]);
 
   const actionBorderColor = tailwind.color(conversationAction.borderActionColor) as string;
 
@@ -136,7 +129,7 @@ const ConversationActionOption = (props: ConversationActionOptionProps) => {
           style={tailwind.style(
             'text-md font-inter-normal-20 leading-[17px] tracking-[0.32px] text-center pt-5 capitalize text-gray-950 ',
           )}>
-          {conversationAction.actionText}
+          {i18n.t(`CONVERSATION_ACTION.OPTIONS.${conversationAction.actionStatus.toUpperCase()}`)}
         </Animated.Text>
       </Pressable>
     </Animated.View>

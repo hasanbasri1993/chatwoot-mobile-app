@@ -2,18 +2,11 @@
 module.exports = ({ config }) => ({
   name: 'Chatwoot Dulido',
   slug: process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile',
-  version: '4.5.0',
+  version: '4.9.11',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  newArchEnabled: false,
   scheme: 'chatwootapp',
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#ffffff',
-    enableFullScreenImage_legacy: true,
-  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.daarululuumlido.chatwoot',
@@ -32,6 +25,7 @@ module.exports = ({ config }) => ({
     associatedDomains: ['applinks:chatwoot.daarululuumlido.com'],
   },
   android: {
+    adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ffffff' },
     package: 'com.daarululuumlido.chatwoot',
     permissions: [
       'android.permission.CAMERA',
@@ -39,6 +33,7 @@ module.exports = ({ config }) => ({
       'android.permission.WRITE_EXTERNAL_STORAGE',
       'android.permission.RECORD_AUDIO',
       'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.POST_NOTIFICATIONS',
     ],
     googleServicesFile: './google-services.json',
     intentFilters: [
@@ -71,15 +66,31 @@ module.exports = ({ config }) => ({
   owner: 'hasanbasri93',
   plugins: [
     'expo-font',
-    ['react-native-permissions', { iosPermissions: ['Camera', 'PhotoLibrary', 'MediaLibrary'] }],
+    'expo-image',
+    'expo-status-bar',
     [
-      '@sentry/react-native/expo',
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        resizeMode: 'contain',
+        backgroundColor: '#ffffff',
+        enableFullScreenImage_legacy: true,
+      },
+    ],
+    [
+      'react-native-permissions',
+      { iosPermissions: ['Camera', 'PhotoLibrary', 'MediaLibrary', 'Notifications'] },
+    ],
+    [
+      '@sentry/react-native',
       {
         url: 'https://sentry.io/',
         project: 'chatwoot',
         organization: 'hasan93',
       },
     ],
+    'expo-web-browser',
+    '@react-native-community/datetimepicker',
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
     [
@@ -87,14 +98,16 @@ module.exports = ({ config }) => ({
       {
         android: {
           minSdkVersion: 24,
-          compileSdkVersion: 35,
-          targetSdkVersion: 35,
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
           enableProguardInReleaseBuilds: true,
         },
-        ios: { useFrameworks: 'static' },
       },
     ],
     './with-ffmpeg-pod.js',
+    './with-android-notification-channel.js',
+    './with-notifee-maven-repo.js',
+    './with-ios-modular-headers.js',
   ],
   androidNavigationBar: { backgroundColor: '#ffffff' },
 });

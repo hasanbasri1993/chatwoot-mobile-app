@@ -1,4 +1,5 @@
 import { Channel } from './common/Channel';
+import type { TwilioContentTemplates, WhatsAppMessageTemplate } from './MessageTemplate';
 
 export type Inbox = {
   id: number;
@@ -11,5 +12,7 @@ export type Inbox = {
   additionalAttributes?: {
     agentReplyTimeWindowMessage?: string;
   };
-  provider: string;
+  provider?: string;
+  messageTemplates?: WhatsAppMessageTemplate[];
+  contentTemplates?: TwilioContentTemplates;
 };

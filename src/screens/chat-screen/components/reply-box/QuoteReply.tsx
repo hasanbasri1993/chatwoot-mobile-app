@@ -8,13 +8,14 @@ import { useRefsContext } from '@/context';
 import { CloseIcon, FileIcon, VoiceNote } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { isMarkdown } from '@/utils';
+import { expandTabs } from '@/utils/expandTabs';
 import { Icon } from '@/components-next/common';
 
 import { useAppDispatch, useAppSelector } from '@/hooks';
 
 import { selectQuoteMessage, setQuoteMessage } from '@/store/conversation/sendMessageSlice';
 
-import { VideoPlayer } from '../message-components';
+import { VideoBubblePlayer } from '../message-components';
 import { Message } from '@/types';
 
 const AudioIcon = () => {
@@ -87,7 +88,7 @@ export const QuoteReply = () => {
 
   const handleScrollToMessage = useCallback(() => {
     const messageIndex = messageListRef.current?.props.data?.findIndex(
-      (item: Message) => item.id === quoteMessage?.id,
+      (item: Message | { date: string }) => 'id' in item && item.id === quoteMessage?.id,
     );
     const shouldScrollToMessage = messageIndex !== -1 && messageIndex !== undefined;
 
@@ -117,7 +118,10 @@ export const QuoteReply = () => {
           ) : null}
           {quoteMessage?.attachments?.length > 0 &&
           quoteMessage?.attachments[0].fileType === 'video' ? (
-            <VideoPlayer playerEnabled={false} videoSrc={quoteMessage?.attachments[0].dataUrl} />
+            <VideoBubblePlayer
+              playerEnabled={false}
+              videoSrc={quoteMessage?.attachments[0].dataUrl}
+            />
           ) : null}
           {quoteMessage?.attachments?.length > 0 &&
           quoteMessage?.attachments[0].fileType === 'audio' ? (
@@ -148,19 +152,18 @@ export const QuoteReply = () => {
                 //   onLinkPress={handleURL}
                 style={styles}>
                 {quoteMessage?.content.split('\n').length > 0
-                  ? `${quoteMessage?.content.split('\n')[0]}`
+                  ? expandTabs(quoteMessage.content.split('\n')[0])
                   : ''}
               </Markdown>
             ) : (
               <Text
                 numberOfLines={1}
                 style={tailwind.style('text-md font-inter-normal-20 tracking-[0.32px]')}>
-                {quoteMessage?.content}
+                {expandTabs(quoteMessage.content)}
               </Text>
             )
           ) : (
-            <Text
-              style={tailwind.style('text-md font-inter-normal-20 tracking-[0.32px]')}>
+            <Text style={tailwind.style('text-md font-inter-normal-20 tracking-[0.32px]')}>
               {quoteMessage?.attachments?.[0]?.fileType}
             </Text>
           )}

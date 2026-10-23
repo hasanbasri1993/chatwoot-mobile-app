@@ -43,7 +43,13 @@
     "SETTINGS": "Settings",
     "CHANGE_LANGUAGE": "Change language",
     "TERMS": "Terms & Conditions",
-    "CHANGE_URL": "Change URL"
+    "CHANGE_URL": "Change URL",
+    "MFA_SETUP_REQUIRED": {
+      "TITLE": "Two-factor authentication required",
+      "MESSAGE": "Your account requires two-factor authentication. Sign in to Chatwoot on the web to set it up, then come back here.",
+      "OPEN_WEB": "Open web app",
+      "DISMISS": "OK"
+    }
   },
   "FORGOT_PASSWORD": {
     "EMAIL": "Please enter your email",
@@ -56,6 +62,13 @@
   },
   "MFA": {
     "TITLE": "Two-Factor Authentication",
+    "CANCEL": "Cancel and return to login",
+    "EMAIL": {
+      "TITLE": "Check your email",
+      "DESCRIPTION": "You're signing in from a new device.",
+      "INSTRUCTIONS": "Enter the 6-digit code from your email",
+      "REMEMBER_DEVICE": "Don't ask again on this device for 30 days"
+    },
     "TABS": {
       "AUTHENTICATOR_APP": "Authenticator App",
       "BACKUP_CODE": "Backup Code"
@@ -146,7 +159,7 @@
     "ALL_CONVERSATION_LOADED": "All conversations loaded",
     "ASSIGN": "Assign conversation",
     "FILE_SIZE_LIMIT": "File exceeds the 5MB attachment limit",
-    "SHARE": "Share",
+    "SHARE": "Share conversation",
     "DETAILS": "Details",
     "LABELS": "Conversation labels",
     "ASSIGNED_AGENT": "Assigned agent",
@@ -169,6 +182,9 @@
     "UN_ASSIGN": "Unassign conversation",
     "CONVERSATION_NOT_FOUND": "Could not fetch conversation",
     "MARK_AS_PENDING": "Mark as pending",
+    "RESOLVE": "Resolve",
+    "REOPEN": "Reopen",
+    "OPEN": "Open",
     "SNOOZE_UNTIL": "Snooze until",
     "SNOOZE_UNTIL_NEXT_REPLY": "Until next reply",
     "SNOOZE_UNTIL_TOMORROW": "Until tomorrow",
@@ -182,6 +198,9 @@
     "DELETE_MESSAGE_SUB_TITLE": "This action cannot be undone.",
     "COPY_MESSAGE": "Message copied to clipboard",
     "STORY_NOT_AVAILABLE": "This story is no longer available",
+    "AUDIO_NOT_AVAILABLE": "This audio could not be loaded",
+    "FILE_LOAD_ERROR": "File load error",
+    "FILE_PREVIEW_ERROR": "Not able to preview file",
     "DELETE_MESSAGE_SUCCESS": "Message deleted successfully",
     "NO_CONTENT": "No content available",
     "ASSIGN_CHANGE": "Conversation Assignee changed",
@@ -241,6 +260,9 @@
       "DELETE_MESSAGE": "Delete message",
       "TRANSLATE": "Translate"
     },
+    "FAILED_TO_SEND": "Failed to send",
+    "RETRY_MESSAGE": "Retry",
+    "RETRY_MESSAGE_ERROR": "Failed to retry message",
     "TRANSLATE_SUCCESS": "Message translated",
     "TRANSLATE_ERROR": "Failed to translate message",
     "VIEW_ORIGINAL": "View original",
@@ -374,7 +396,10 @@
     "TITLE": "Contact Details",
     "EMAIL": "Email",
     "PHONE_NUMBER": "Phone Number",
+    "PHONE": "Phone",
     "CALL": "Call",
+    "LOCATION": "Location",
+    "COMPANY": "Company",
     "CONTACT_ATTRIBUTES": "Contact Attributes",
     "VALUE_UNAVAILABLE": "Unavailable"
   },
@@ -396,7 +421,22 @@
     "TITLE": "Contact Attributes"
   },
   "CONVERSATION_ACTION": {
-    "TITLE": "Actions"
+    "TITLE": "Actions",
+    "OPTIONS": {
+      "OPEN": "Open",
+      "PENDING": "Pending",
+      "SNOOZED": "Snooze",
+      "RESOLVED": "resolve"
+    }
+  },
+  "CONVERSATION_ATTACHMENT": {
+    "OPTIONS": {
+      "PHOTOS": "Photos",
+      "CAMERA": "Camera",
+      "ATTACH_FILE": "Attach File",
+      "MACROS": "Macros",
+      "WHATSAPP_TEMPLATES": "Whatsapp Templates"
+    }
   },
   "CONVERSATION_TEAMS": {
     "TITLE": "Assign team",
@@ -405,6 +445,16 @@
   },
   "CONVERSATION_LABELS": {
     "TITLE": "Conversation Labels",
+    "ADD_LABEL": "Add Labels",
+    "EMPTY_LIST": "Please add labels to your account",
+    "NO_LABEL": "No labels assigned",
+    "UPDATE_LABEL": "Label updated successfully",
+    "SELECTED": "Selected",
+    "NOT_SELECTED": "No labels selected",
+    "NO_RESULT": "No labels found"
+  },
+  "CONTACT_LABELS": {
+    "TITLE": "Contact Labels",
     "ADD_LABEL": "Add Labels",
     "EMPTY_LIST": "Please add labels to your account",
     "NO_LABEL": "No labels assigned",
@@ -428,10 +478,14 @@
   },
   "ERRORS": {
     "COMMON_ERROR": "Could not connect to Chatwoot Server, Please try again later",
+    "UNABLE_TO_OPEN_LINK": "Could not open this link",
     "OfFLINE": "You must connect to Wi-fi or a cellular network to get online again",
     "CANNOT_FETCH": "There was an error fetching the information, please try again",
     "AUTH": "Username / Password Incorrect. Please try again",
-    "NO_ACCOUNTS_MESSAGE": "You don't have access to any chatwoot accounts"
+    "NO_ACCOUNTS_MESSAGE": "You don't have access to any chatwoot accounts",
+    "UNEXPECTED_TITLE": "Something went wrong",
+    "UNEXPECTED_DESCRIPTION": "The app ran into an unexpected problem. You can try again without restarting.",
+    "TRY_AGAIN": "Try again"
   },
   "SUCCESS": {
     "AUTH": "Login Successful"
@@ -482,6 +536,25 @@
     "EXECUTION_SUCCESS": "Macro executed successfully",
     "EXECUTION_ERROR": "Macro execution failed",
     "NO_MACROS": "No macros found"
+  },
+  "CONTENT_TEMPLATE": {
+    "TITLE": "Templates",
+    "SELECT_TEMPLATE": "Select WhatsApp Template",
+    "VARIABLES": "Variables",
+    "SEND": "Send",
+    "NO_TEMPLATES": "No templates available",
+    "NO_RESULTS": "No templates match your search",
+    "SEARCH_PLACEHOLDER": "Search for the template you want to send",
+    "IMAGE_URL": "Image URL",
+    "VIDEO_URL": "Video URL",
+    "DOCUMENT_URL": "Document URL",
+    "MEDIA_URL": "Media URL",
+    "IMAGE_URL_PLACEHOLDER": "https://...",
+    "MEDIA_URL_PLACEHOLDER": "https://...",
+    "IMAGE_PREVIEW_FAILED": "Could not load image from URL",
+    "DOCUMENT_NAME": "Document name",
+    "DOCUMENT_NAME_PLACEHOLDER": "Filename (optional)",
+    "BUTTON_PARAMETERS": "Button parameters"
   },
   "SEARCH": {
     "PLACEHOLDER": "Type 2 or more characters to search",

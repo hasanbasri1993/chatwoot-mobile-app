@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 import { Icon, Spinner } from '@/components-next';
 import i18n from '@/i18n';
@@ -9,6 +8,7 @@ import { ChevronLeft } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { Agent, Macro } from '@/types';
 import { useHaptic, useScaleAnimation } from '@/utils';
+import { expandTabs } from '@/utils/expandTabs';
 import { useAppSelector } from '@/hooks';
 import { selectAllLabels } from '@/store/label/labelSelectors';
 import { selectAllTeams } from '@/store/team/teamSelectors';
@@ -82,7 +82,7 @@ const MacroDetails = ({ macro, onBack, onClose }: MacroDetailsProps) => {
       <View style={tailwind.style('flex-row items-center p-4')}>
         <Pressable onPress={onBack} style={tailwind.style('flex-1 flex-row items-center')}>
           <Icon icon={<ChevronLeft />} size={18} style={tailwind.style('mr-1')} />
-          <Animated.Text style={tailwind.style('flex-1 text-base')} numberOfLines={1}>
+          <Animated.Text style={tailwind.style('flex-1 text-base text-gray-950')} numberOfLines={1}>
             {macro.name}
           </Animated.Text>
         </Pressable>
@@ -107,7 +107,7 @@ const MacroDetails = ({ macro, onBack, onClose }: MacroDetailsProps) => {
         </Animated.View>
       </View>
       {macro.actions && (
-        <BottomSheetScrollView
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={tailwind.style('px-4')}>
           {resolvedMacro().map((action, index) => (
@@ -124,13 +124,15 @@ const MacroDetails = ({ macro, onBack, onClose }: MacroDetailsProps) => {
                   'absolute left-0 top-[2px] w-3 h-3 rounded-full bg-gray-300 border-2 border-gray-300',
                 )}
               />
-              <Animated.Text style={tailwind.style('mb-1')}>{action.actionName}</Animated.Text>
+              <Animated.Text style={tailwind.style('mb-1 text-gray-950')}>
+                {action.actionName}
+              </Animated.Text>
               <Animated.Text style={tailwind.style('text-sm text-gray-900')}>
-                {action.actionValue}
+                {expandTabs(String(action.actionValue))}
               </Animated.Text>
             </View>
           ))}
-        </BottomSheetScrollView>
+        </ScrollView>
       )}
     </Animated.View>
   );

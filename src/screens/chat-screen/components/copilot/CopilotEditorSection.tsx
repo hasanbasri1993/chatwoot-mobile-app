@@ -6,6 +6,7 @@ import { Icon } from '@/components-next/common';
 import { CopilotDiscardIcon, CopilotAcceptIcon } from '@/svg-icons';
 import { tailwind } from '@/theme';
 import { useHaptic } from '@/utils';
+import { expandTabs } from '@/utils/expandTabs';
 
 type CopilotEditorSectionProps = {
   isGenerating: boolean;
@@ -65,7 +66,7 @@ export const CopilotEditorSection = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.springify().damping(20).stiffness(180)}
+      entering={FadeInDown.springify().mass(1).damping(15).stiffness(105)}
       exiting={FadeOutUp.duration(150)}
       style={tailwind.style('flex-row items-start px-1 mb-2')}>
       {showActions ? (
@@ -81,7 +82,7 @@ export const CopilotEditorSection = ({
         style={tailwind.style('flex-1 max-h-[120px] border border-blackA-A3 rounded-2xl')}
         contentContainerStyle={tailwind.style('px-3 py-2')}>
         <Markdown style={markdownStyles} markdownit={markdownIt}>
-          {displayText}
+          {expandTabs(displayText)}
         </Markdown>
       </ScrollView>
       {showActions ? (
