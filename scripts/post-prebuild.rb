@@ -14,12 +14,12 @@ end
 content = File.read(PODFILE)
 
 # Check if patch is already applied
-if content.include?('patch_fmt_for_xcode26')
-  puts "✓ fmt patch already applied to ios/Podfile"
+if content.include?('patch_fmt_for_xcode26') && content.include?('raise_pod_deployment_targets')
+  puts "✓ patches already applied to ios/Podfile"
   exit 0
 end
 
-puts "Applying fmt patch to ios/Podfile..."
+puts "Applying patches to ios/Podfile..."
 
 # 1. Add the patch function after "# @generated end setup"
 patch_function = <<~RUBY
@@ -41,18 +41,41 @@ patch_function = <<~RUBY
       end
     end
   end
+
+  # Pods default to RN's minimum (15.1), but some (e.g. react-native-ios-context-menu)
+  # use iOS 16 APIs without availability checks. Match the app's 16.4 minimum.
+  def raise_pod_deployment_targets(installer, min_version = '16.4')
+    # Pods may be split into one Xcode project per pod, so cover every generated project.
+    projects = installer.respond_to?(:generated_projects) ? installer.generated_projects : [installer.pods_project]
+    projects.each do |project|
+      project.targets.each do |target|
+        target.build_configurations.each do |build_config|
+          current = build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+          if current.nil? || Gem::Version.new(current) < Gem::Version.new(min_version)
+            build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_version
+          end
+        end
+      end
+      project.save
+    end
+  end
 RUBY
 
 content.sub!(/(# @generated end setup)/, "\\1#{patch_function}")
 
-# 2. Add the function call inside post_install block, after react_native_post_install
-content.sub!(
-  /(:ccache_enabled => podfile_properties\['apple\.ccacheEnabled'\] == 'true',\n    \))/,
-  "\\1\n\n    # Xcode 26.5 fix for fmt consteval compilation error\n    patch_fmt_for_xcode26(installer)"
+# 2. Add the function calls inside post_install block, after react_native_post_install
+patched = content.sub!(
+  /(react_native_post_install\(.*?\n    \))/m,
+  "\\1\n\n    # Xcode 26.5 fix for fmt consteval compilation error\n    patch_fmt_for_xcode26(installer)" \
+  "\n    raise_pod_deployment_targets(installer)"
 )
+unless patched
+  puts "Error: could not find react_native_post_install in #{PODFILE}"
+  exit 1
+end
 
 File.write(PODFILE, content)
-puts "✓ fmt patch applied to ios/Podfile"
+puts "✓ fmt and deployment target patches applied to ios/Podfile"
 puts ""
 puts "All post-prebuild patches applied successfully!"
 puts "You can now run 'cd ios && pod install'"
