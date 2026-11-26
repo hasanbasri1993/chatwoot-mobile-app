@@ -2,7 +2,7 @@
 module.exports = ({ config }) => ({
   name: 'Chatwoot Dulido',
   slug: process.env.EXPO_PUBLIC_APP_SLUG || 'chatwoot-mobile',
-  version: '4.9.11',
+  version: '4.11.6',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
