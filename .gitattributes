@@ -1,0 +1,4 @@
+
+# Keep patches and shell scripts LF so Windows checkouts do not corrupt them (EAS builds)
+patches/*.patch text eol=lf
+*.sh text eol=lf
