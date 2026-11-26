@@ -17,7 +17,15 @@ diff --git a/apple/scripts/build-xcframework.sh b/apple/scripts/build-xcframewor
 index 28d3249bebc01086a04487b8b1ab12de225abacd..6106ad7bc0e12b2434bac58bbd355012e0548a88 100755
 --- a/apple/scripts/build-xcframework.sh
 +++ b/apple/scripts/build-xcframework.sh
-@@ -217,7 +217,10 @@ build_slice() {
+@@ -207,7 +207,6 @@ build_slice() {
+     -destination "generic/platform=${destination}" \
+     -derivedDataPath "$DERIVED_DATA_PATH" \
+     -configuration "$CONFIGURATION" \
+-    -quiet \
+     -disableAutomaticPackageResolution \
+     -skipPackagePluginValidation \
+     -skipMacroValidation \
+@@ -217,7 +216,10 @@ build_slice() {
      DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
      COMPILER_INDEX_STORE_ENABLE=NO \
      SWIFT_COMPILATION_MODE=wholemodule \
